@@ -1,22 +1,21 @@
+import * as fs from "fs";
+import readLine from "n-readlines";
 import {
   workspace,
   languages,
-  Hover,
   ExtensionContext,
   TextDocument,
-	Position,
-	CancellationToken,
-	DocumentLinkProvider,
-	DocumentLink,
-	ProviderResult,
-	Range,
-	Uri,
+  Position,
+  DocumentLinkProvider,
+  DocumentLink,
+  ProviderResult,
+  Range,
+  Uri,
 } from "vscode";
-import { searchFileForState, getLineNumber } from "./utils";
 
 export function activate(context: ExtensionContext) {
   const link = languages.registerDocumentLinkProvider(
-    { scheme: "file", pattern: '**/states/**/*.{ts,js}' },
+    { scheme: "file", pattern: "**/states/**/*.{ts,js}" },
     new LinkProvider(),
   );
   context.subscriptions.push(link);
@@ -25,53 +24,148 @@ export function activate(context: ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
+interface IFilePathWithItsStates {
+  filePath: string;
+  states: string[];
+}
 
 class LinkProvider implements DocumentLinkProvider {
-	public provideDocumentLinks(document: TextDocument, token: CancellationToken): ProviderResult<DocumentLink[]> {
-    let documentLinks = [];
-    let index = 0;
-    const reg = /to\s?[:=]\s['"][\w\W]+['"]/g;
-    while (index < document.lineCount) {
-      let line = document.lineAt(index);
-      let result = line.text.match(reg);
-      if (result !== null) {
-        for (let item of result) {
-          const splitted = item.split(" ");
-					const stateName = splitted[1].replace(/"/g, '').replace(/'/g, "");
-					
-					if (stateName === "entry" || stateName === "die") {
-						continue;
-					}
-          
-					const filePath = searchFileForState(stateName, document);
+  public provideDocumentLinks(
+    document: TextDocument,
+  ): Thenable<DocumentLink[]> {
+    const documentLinks: DocumentLink[] = [];
+    const toStateRegex = /to\s?[:=]\s['"][\w\W]+['"]/g;
 
-					if (!filePath) {
-						continue;
-					}
-					
-					let start = new Position(line.lineNumber, line.text.indexOf(stateName));
-					let end = start.translate(0, stateName.length);
-					let documentLink = new VoxaStateLink(new Range(start, end), filePath, stateName);
-					documentLinks.push(documentLink);
+    return LinkProvider.getAllStatesInFiles().then(
+      (filePathsWithItsStates: IFilePathWithItsStates[]) => {
+        for (let index = 0; index < document.lineCount; index++) {
+          const line = document.lineAt(index);
+          const result = line.text.match(toStateRegex);
+          if (result !== null) {
+            for (let item of result) {
+              const splitted = item.split(" ");
+              const stateName = splitted[1].replace(/"/g, "").replace(/'/g, "");
+
+              if (stateName === "entry" || stateName === "die") {
+                continue;
+              }
+
+              const filePath = LinkProvider.searchForStateFilePath(
+                stateName,
+                filePathsWithItsStates,
+              );
+
+              if (!filePath) {
+                continue;
+              }
+
+              const start = new Position(
+                line.lineNumber,
+                line.text.indexOf(stateName),
+              );
+              const end = start.translate(0, stateName.length);
+              const documentLink = new VoxaStateLink(
+                new Range(start, end),
+                filePath,
+                stateName,
+              );
+              documentLinks.push(documentLink);
+            }
+          }
         }
-      }
-      index++;
-		}
 
-    return documentLinks;
+        return documentLinks;
+      },
+    );
   }
 
-  /**
-   * resolveDocumentLink
-   */
-  public resolveDocumentLink(link: VoxaStateLink, token: CancellationToken): ProviderResult<DocumentLink> {
-		const lineNumber = getLineNumber(link.stateName, link.filePath);
-		
-		if (lineNumber) {
-			link.target = Uri.parse(`file:${link.filePath}#${lineNumber}`);
-		}
+  private static async getAllStatesInFiles(): Promise<
+    IFilePathWithItsStates[]
+  > {
+    const includePattern = "**/states/**/*.{ts,js}";
+    const excludePattern = "**/states/**/index.{ts,js}";
+    const filesWithStates = await workspace.findFiles(
+      includePattern,
+      excludePattern,
+    );
+    const filePathsWithItsStates: IFilePathWithItsStates[] = [];
 
-		return link;
+    filesWithStates.forEach((file) => {
+      const contentWithLineBreaksAndTabs = fs
+        .readFileSync(file.path)
+        .toString()
+        .replace(/\s{2,}|\t|\r\n|\n|\r|/g, "");
+      const onStateRegex = /onState[(]['"][^"]+['"]/g;
+      const stateMatches = contentWithLineBreaksAndTabs.match(onStateRegex);
+
+      if (stateMatches) {
+        const states = stateMatches.map((match) => {
+          return match
+            .replace("onState(", "")
+            .replace(/'/g, "")
+            .replace(/"/g, "");
+        });
+
+        filePathsWithItsStates.push({
+          filePath: file.path,
+          states,
+        });
+      }
+    });
+
+    return filePathsWithItsStates;
+  }
+
+  private static searchForStateFilePath(
+    stateName: string,
+    filePathsWithItsStates: IFilePathWithItsStates[],
+  ): string | null {
+    const result = filePathsWithItsStates.find((filePathAndStates) => {
+      return filePathAndStates.states.includes(stateName);
+    });
+
+    if (!result) {
+      return null;
+    }
+
+    return result.filePath;
+  }
+
+  public resolveDocumentLink(
+    link: VoxaStateLink,
+  ): ProviderResult<DocumentLink> {
+    const lineNumber = LinkProvider.getLineNumber(
+      link.stateName,
+      link.filePath,
+    );
+
+    if (lineNumber) {
+      link.target = Uri.parse(`file:${link.filePath}#${lineNumber}`);
+    }
+
+    return link;
+  }
+
+  private static getLineNumber(stateName: string, filePath: string): number {
+    const file = new readLine(filePath);
+    let lineNumber = 0;
+    let lineText;
+    while ((lineText = file.next())) {
+      lineNumber++;
+      if (lineText.toString().includes(`onState("${stateName}"`)) {
+        return lineNumber;
+      }
+
+      if (
+        lineText
+          .toString()
+          .replace(/\s{2,}/g, "")
+          .replace(/\t/g, "") === `"${stateName}",`
+      ) {
+        return lineNumber;
+      }
+    }
+    return 0;
   }
 }
 
