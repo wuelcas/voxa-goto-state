@@ -1,8 +1,8 @@
 {
-	"name": "voxa-goto-state",
-	"displayName": "voxa-goto-state",
-	"description": "",
-	"version": "0.0.1",
+	"name": "voxa-states-intellisense",
+	"displayName": "Voxa States Intellisense",
+	"description": "State intellisense for Voxa framework projects",
+	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.45.0"
 	},
@@ -10,17 +10,9 @@
 		"Other"
 	],
 	"activationEvents": [
-		"*"
+		"workspaceContains:**/states/*"
 	],
 	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "voxa-goto-state.helloWorld",
-				"title": "Hello World"
-			}
-		]
-	},
 	"scripts": {
 		"vscode:prepublish": "yarn run compile",
 		"compile": "tsc -p ./",
@@ -32,7 +24,6 @@
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
 		"@types/mocha": "^7.0.2",
-		"@types/n-readlines": "^1.0.1",
 		"@types/node": "^13.11.0",
 		"@types/vscode": "^1.45.0",
 		"@typescript-eslint/eslint-plugin": "^2.30.0",
@@ -40,9 +31,11 @@
 		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"mocha": "^7.1.2",
-		"n-readlines": "^1.0.0",
 		"typescript": "^3.8.3",
 		"vscode-test": "^1.3.0"
 	},
-	"dependencies": {}
+	"dependencies": {
+		"@types/n-readlines": "^1.0.1",
+		"n-readlines": "^1.0.0"
+	}
 }
