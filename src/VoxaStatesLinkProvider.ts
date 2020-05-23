@@ -67,9 +67,7 @@ export default class VoxaStatesLinkProvider implements DocumentLinkProvider {
     );
   }
 
-  private static async getAllStatesInFiles(): Promise<
-    IFilePathWithStates[]
-  > {
+  private static async getAllStatesInFiles(): Promise<IFilePathWithStates[]> {
     const includePattern = "**/states/**/*.{ts,js}";
     const excludePattern = "**/states/**/index.{ts,js}";
     const filesWithStates = await workspace.findFiles(
@@ -145,11 +143,7 @@ export default class VoxaStatesLinkProvider implements DocumentLinkProvider {
         return lineNumber;
       }
 
-      if (
-        lineText
-          .toString()
-          .trim() === `"${stateName}",`
-      ) {
+      if (lineText.toString().trim() === `"${stateName}",`) {
         return lineNumber;
       }
     }
