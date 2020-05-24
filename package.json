@@ -1,13 +1,22 @@
 {
-	"name": "voxa-states-intellisense",
-	"displayName": "Voxa States Intellisense",
-	"description": "State intellisense for Voxa framework projects",
+	"name": "voxa-goto-state",
+	"displayName": "Voxa GoTo State",
+	"description": "Jump to any state in your Voxa project",
 	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.45.0"
 	},
 	"categories": [
 		"Other"
+	],
+	"keywords": [
+		"voxa",
+		"alexa",
+		"echo",
+		"states",
+		"state machine",
+		"file navigation",
+		"google assistant"
 	],
 	"activationEvents": [
 		"workspaceContains:**/states/*"
