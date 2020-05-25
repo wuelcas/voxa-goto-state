@@ -2,6 +2,11 @@
 	"name": "voxa-goto-state",
 	"displayName": "Voxa GoTo State",
 	"description": "Jump to any state in your Voxa project",
+	"icon": "images/voxa-logo.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wuelcas/voxa-goto-state.git"
+},
 	"version": "0.1.0",
 	"engines": {
 		"vscode": "^1.45.0"
