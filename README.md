@@ -1,6 +1,8 @@
 # Voxa GoTo State plugin for VS Code
 
-![Use Extension](images/voxa-logo-full-color.png)
+<p align="center">
+  <img src="images/voxa-logo-full-color.png">
+</p>
 
 Quick code navigation for your states in your Voxa project. Great when debugging/reading voice applications created in the Voxa framework.
 
@@ -10,7 +12,7 @@ Now you can just Alt + Click into the state you're going to.
 
 ## Usage
 
-Gif pending
+![Usage](images/usage.gif)
 
 _____
 
