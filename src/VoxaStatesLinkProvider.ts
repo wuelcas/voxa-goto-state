@@ -68,8 +68,8 @@ export default class VoxaStatesLinkProvider implements DocumentLinkProvider {
   }
 
   private static async getAllStatesInFiles(): Promise<IFilePathWithStates[]> {
-    const includePattern = "**/src/app/states/**/*.{ts,js}";
-    const excludePattern = "**/src/app/states/**/index.{ts,js}";
+    const includePattern = "src/app/states/**/*.{ts,js}";
+    const excludePattern = "src/app/states/**/index.{ts,js}";
     const filesWithStates = await workspace.findFiles(
       includePattern,
       excludePattern,
